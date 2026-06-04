@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
      model: "gemini-2.5-flash",
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 512, // Keep low to save tokens
+        maxOutputTokens: 1024, // Keep low to save tokens
       },
     });
 
