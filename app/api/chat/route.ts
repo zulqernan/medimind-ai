@@ -86,17 +86,17 @@ export async function POST(req: NextRequest) {
     const result = await model.generateContent(fullPrompt);
     const aiResponse = result.response.text();
 
-    // Emergency detection
-    const emergencyKeywords = [
-      "chest pain", "can't breathe", "cant breathe",
-      "unconscious", "stroke", "seizure",
-      "heart attack", "difficulty breathing", "severe bleeding"
-    ];
-    const lastMessage = messages[messages.length - 1];
-    const isEmergency =
-      emergencyKeywords.some(k =>
-        lastMessage.content.toLowerCase().includes(k)
-      ) || aiResponse.includes("EMERGENCY ALERT");
+   // Emergency detection
+const emergencyKeywords = [
+  "chest pain", "can't breathe", "cant breathe",
+  "unconscious", "stroke", "seizure",
+  "heart attack", "difficulty breathing", "severe bleeding",
+  "not breathing", "no pulse", "overdose"
+];
+const lastMessage = messages[messages.length - 1];
+const isEmergency = emergencyKeywords.some(k =>
+  lastMessage.content.toLowerCase().includes(k)
+);
 
     return NextResponse.json({
       success: true,
