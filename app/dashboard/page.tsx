@@ -17,6 +17,7 @@ export default function Dashboard() {
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -25,7 +26,41 @@ export default function Dashboard() {
       router.push("/login");
       return;
     }
-    setUser(JSON.parse(userData));
+    const u = JSON.parse(userData);
+    setUser(u);
+
+    // First time login welcome
+    const isFirstTime = !localStorage.getItem("welcomed");
+    if (isFirstTime) {
+      setShowWelcome(true);
+      // Welcome voice greeting
+setTimeout(() => {
+  const greeting = `Welcome ${u.name}! I am MediMind AI, your personal health assistant. How can I help you today?`;
+  const utterance = new SpeechSynthesisUtterance(greeting);
+  utterance.rate = 1.0;
+  utterance.pitch = 1.3;
+  utterance.lang = "en-US";
+  
+  const setVoice = () => {
+    const voices = window.speechSynthesis.getVoices();
+    const femaleVoice = voices.find(v =>
+      v.name.includes("Google UK English Female") ||
+      v.name.includes("Microsoft Zira") ||
+      v.name.includes("Samantha") ||
+      v.name.includes("Karen")
+    );
+    if (femaleVoice) utterance.voice = femaleVoice;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  if (window.speechSynthesis.getVoices().length > 0) {
+    setVoice();
+  } else {
+    window.speechSynthesis.onvoiceschanged = setVoice;
+  }
+}, 500);
+      localStorage.setItem("welcomed", "true");
+    }
   }, [router]);
 
   if (!user) {
@@ -38,8 +73,46 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-950 flex">
+
+      {/* Welcome Modal */}
+      {showWelcome && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-teal-500/30 rounded-3xl p-8 max-w-md w-full text-center">
+            <div className="text-5xl mb-4">👋</div>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Welcome, {user?.name}!
+            </h2>
+            <p className="text-gray-400 mb-6 text-sm leading-relaxed">
+              MediMind AI is your personal health assistant. I can help you with:
+            </p>
+            <div className="space-y-3 mb-6 text-left">
+              {[
+                { icon: "🧠", text: "Describe symptoms and get AI health guidance" },
+                { icon: "🎤", text: "Voice consultation in English or Urdu" },
+                { icon: "📄", text: "Upload and analyze your lab reports" },
+                { icon: "🚨", text: "Emergency detection and alerts" },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 bg-gray-800 rounded-xl px-4 py-3">
+                  <span className="text-xl">{item.icon}</span>
+                  <p className="text-gray-300 text-sm">{item.text}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-yellow-400 text-xs mb-6 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3">
+              ⚠️ MediMind AI is not a licensed doctor. Always consult a real healthcare provider.
+            </p>
+            <button
+              onClick={() => setShowWelcome(false)}
+              className="w-full bg-teal-500 hover:bg-teal-400 text-white font-bold py-3 rounded-xl transition-colors"
+            >
+              Get Started 🚀
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar */}
-      <aside className={`${sidebarOpen ? "w-64" : "w-16"} bg-gray-900 border-r border-gray-800 flex flex-col transition-all duration-300 fixed h-full z-50`}>
+      <aside className={`${sidebarOpen ? "w-64" : "w-16"} bg-gray-900 border-r border-gray-800 flex flex-col transition-all duration-300 fixed h-full z-40`}>
         {/* Logo */}
         <div className="p-4 border-b border-gray-800 flex items-center justify-between">
           {sidebarOpen && (
@@ -96,6 +169,7 @@ export default function Dashboard() {
               onClick={() => {
                 localStorage.removeItem("token");
                 localStorage.removeItem("user");
+                localStorage.removeItem("welcomed");
                 router.push("/login");
               }}
               className="w-full mt-2 text-gray-400 hover:text-red-400 text-xs py-2 rounded-xl hover:bg-gray-800 transition-colors"
@@ -126,10 +200,10 @@ export default function Dashboard() {
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             {[
-              { label: "Consultations", value: "0", icon: "🧠", color: "teal" },
-              { label: "Lab Reports", value: "0", icon: "📄", color: "blue" },
-              { label: "Reminders", value: "0", icon: "⏰", color: "purple" },
-              { label: "Health Score", value: "—", icon: "❤️", color: "red" },
+              { label: "Consultations", value: "0", icon: "🧠" },
+              { label: "Lab Reports", value: "0", icon: "📄" },
+              { label: "Reminders", value: "0", icon: "⏰" },
+              { label: "Health Score", value: "—", icon: "❤️" },
             ].map((stat) => (
               <div key={stat.label} className="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-teal-500/30 transition-colors">
                 <div className="text-2xl mb-3">{stat.icon}</div>
@@ -143,9 +217,9 @@ export default function Dashboard() {
           <h2 className="text-white font-bold text-lg mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             {[
-              { icon: "🧠", title: "AI Health Chat", desc: "Describe symptoms, get AI guidance", path: "/chat", color: "teal" },
-              { icon: "🎤", title: "Voice Assistant", desc: "Talk to AI about your health", path: "/voice", color: "blue" },
-              { icon: "📄", title: "Lab Reports", desc: "Upload and analyze lab reports", path: "/reports", color: "purple" },
+              { icon: "🧠", title: "AI Health Chat", desc: "Describe symptoms, get AI guidance", path: "/chat" },
+              { icon: "🎤", title: "Voice Assistant", desc: "Talk to AI about your health", path: "/voice" },
+              { icon: "📄", title: "Lab Reports", desc: "Upload and analyze lab reports", path: "/reports" },
             ].map((action) => (
               <button
                 key={action.path}
